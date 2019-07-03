@@ -1,0 +1,23 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "test-backend"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tpatel1781/PlacesAppBackend.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tpatel1781/PlacesAppBackend/issues"
+  },
+  "homepage": "https://github.com/tpatel1781/PlacesAppBackend#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "nodemon": "^1.19.1"
+  }
+}
