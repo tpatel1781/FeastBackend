@@ -1,44 +1,66 @@
-const { GraphQLServer } = require('graphql-yoga')
-const mongoose = require('mongoose'), Schema = mongoose.Schema
-// const UserSchema = require('./User').schema;
-// const PlaceSchema = require('./Place').schema;
+var express = require('express');
+var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+var app = express();
+var bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json())
+mongoose.set('useFindAndModify', false);
+
+var port = 4000;
 
 // Connect to the 'testPlacesDb' database
-mongoose.connect("mongodb://localhost/testPlacesDb")
+mongoose.connect("mongodb://localhost/testPlacesDb");
 
-// Defining the database schema
-const User = mongoose.model("User", {
-	name: String
+// Define data schema
+var PlaceSchema = new Schema({
+  googleID: String,
+  name: String,
+  rating: Number
+});
+var UserSchema = new Schema({
+  name: String,
+  visitedPlaces: [PlaceSchema]
+});
+var Place = mongoose.model('Place', PlaceSchema);
+var User = mongoose.model('User', UserSchema);
+
+// API Routes
+app.post('/addUser', async function(req, res) {
+  var user = new User({ name: req.body.name, visitedPlaces: [] });
+  await user.save();
+  res.send(user);
+  console.log('Added user ' + req.body.name);
+});
+app.post('/addPlace', async function(req, res) {
+  var myUser;
+  User.findById(req.body.userID, function(err, user) {
+    if (err) return err;
+    myUser = user;
+  });
+  myUser.findOne({ googleID: req.body.googleID }, async function(err, results) {
+    if (err) return err;
+    if (!results) {
+      // User does not already have this place, add it to visitedPlaces
+      var place = new Place({ googleID: req.body.googleID, name: req.body.name, rating: req.body.rating });
+      await User.findOneAndUpdate({ _id: req.body.userID }, { $push: { visitedPlaces: place }});
+    } else {
+      // User already has this place, update existing item
+      Person.update({_id: req.body.userID}, {$set: {
+        'visitedPlaces.$.name': req.body.name,
+        'visitedPlaces.$.rating': req.body.rating
+      }});
+    }
+  });
+  res.send('Added place ' + req.body.name + ' to user ' + req.body.userID);
+});
+app.delete('/removePlace', async function(req, res) {
+  await User.update( { _id: req.body.userID }, { $pull: { visitedPlaces: { _id: req.body.placeID }}});
+  res.send('Successfully removed place');
 });
 
-const typeDefs = `
-  type Query {
-    hello(name: String): String!
-  }
-  type User {
-	id: ID!
-	name: String!
-  }
-  type Mutation {
-	createUser(name: String!): User!
-  }
-`;
-
-const resolvers = {
-  Query: {
-    hello: (_, { name }) => `Hello ${name || 'World'}`,
-  },
-  Mutation: {
-	createUser: async (_, { name }) => {
-		const user = new User({ name });
-		await user.save(); // Adds the new user to the database
-		return user;
-	}
-  }
-};
-
-const server = new GraphQLServer({ typeDefs, resolvers })
-// Start the server once the database connection has been established
 mongoose.connection.once("open", function() {
-	server.start(() => console.log('Server is running on localhost:4000'))
+  // Start the server
+  app.listen(port);
+  console.log('Server started at port ' + port);
 });
