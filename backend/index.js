@@ -33,23 +33,28 @@ app.post('/addUser', async function(req, res) {
   console.log('Added user ' + req.body.name);
 });
 app.post('/addPlace', async function(req, res) {
-  var myUser;
-  User.findById(req.body.userID, function(err, user) {
+  await User.findOne({ _id: req.body.userID }, async function(err, results) {
     if (err) return err;
-    myUser = user;
-  });
-  myUser.findOne({ googleID: req.body.googleID }, async function(err, results) {
-    if (err) return err;
-    if (!results) {
+    const correctPlace = []
+    // Get the list of existing 
+    results.visitedPlaces.forEach(place => {
+      if (place.googleID === req.body.googleID) {
+        correctPlace.push(place);
+        break;
+      }
+    });
+    if (!correctPlace.length) {
       // User does not already have this place, add it to visitedPlaces
+      console.log("User does not already have this place");
       var place = new Place({ googleID: req.body.googleID, name: req.body.name, rating: req.body.rating });
       await User.findOneAndUpdate({ _id: req.body.userID }, { $push: { visitedPlaces: place }});
     } else {
       // User already has this place, update existing item
-      Person.update({_id: req.body.userID}, {$set: {
+      console.log("User already has this place");
+      await User.findOneAndUpdate({ "visitedPlaces.googleID": req.body.googleID, _id: req.body.userID }, {$set: {
         'visitedPlaces.$.name': req.body.name,
         'visitedPlaces.$.rating': req.body.rating
-      }});
+      }})
     }
   });
   res.send('Added place ' + req.body.name + ' to user ' + req.body.userID);
