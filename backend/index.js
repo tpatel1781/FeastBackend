@@ -7,7 +7,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json())
 mongoose.set('useFindAndModify', false);
 
-var port = 4000;
+var port = process.env.PORT || 4000;
 
 // Connect to the 'testPlacesDb' database
 mongoose.connect("mongodb://localhost/testPlacesDb");
