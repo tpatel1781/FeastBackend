@@ -10,8 +10,8 @@ mongoose.set('useFindAndModify', false);
 var port = process.env.PORT || 4000;
 
 // Connect to the 'testPlacesDb' database
-// mongoose.connect("mongodb://localhost/testPlacesDb");
-mongoose.connect("mongodb+srv://user:rDZYNBtxxA20RCt7@cluster0-dhybl.mongodb.net/test?retryWrites=true&w=majority");
+mongoose.connect("mongodb://localhost/testPlacesDb");
+// mongoose.connect("mongodb+srv://user:rDZYNBtxxA20RCt7@cluster0-dhybl.mongodb.net/test?retryWrites=true&w=majority");
 
 // Define data schema
 var PlaceSchema = new Schema({
@@ -23,7 +23,7 @@ var UserSchema = new Schema({
   _id: String,
   name: String,
   visitedPlaces: [PlaceSchema],
-  groups: [[String]]
+  groupIDs: [String] // TODO Change addGroup endpoint to take in the groupID instead of Group, add publisher collection and endpoints
 });
 var Place = mongoose.model('Place', PlaceSchema);
 var User = mongoose.model('User', UserSchema);
@@ -43,7 +43,13 @@ app.post('/addUser', async function(req, res) {
   });
 });
 app.post('/addGroup', async function(req, res) {
-  
+  if (req.body.group.includes(req.body.username)) {
+    // TODO Have list of groups be added to all the 
+    await User.findOneAndUpdate({ _id: req.body.username }, { $push: { groups: req.body.group }});
+    res.send(req.body.group);
+  } else {
+    res.send("Must include current user in the group list");
+  }
 });
 app.get('/getUser', async function(req, res) {
   await User.findOne({ _id: req.body.username }, async function(err, results) {
