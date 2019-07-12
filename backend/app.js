@@ -69,7 +69,7 @@ app.post('/addGroup', async function (req, res) {
 		});
 	}
 	if (error) {
-		res.send("Error: Could not find user(s): " + invalidUsers);
+		res.status(404).send("Error: Could not find user(s): " + invalidUsers);
 	} else {
 		// All of the usernames in the given list are registered users
 		await group.save(function (err) { if (err) return res.send(err); });
@@ -92,7 +92,7 @@ app.delete('/removeGroup', async function (req, res) {
 app.get('/getUser', async function (req, res) {
 	await User.findOne({ _id: req.body.username }, async function (err, results) {
 		if (err || !results) {
-			res.send('Cannot find user: \'' + req.body.username + '\'');
+			res.status(404).send('Cannot find user: \'' + req.body.username + '\'');
 		} else {
 			res.send(results);
 		}
