@@ -25,16 +25,20 @@ var UserSchema = new Schema({
   visitedPlaces: [PlaceSchema],
   groupIDs: [String] // TODO Change addGroup endpoint to take in the groupID instead of Group, add publisher collection and endpoints
 });
+var GroupSchema = new Schema({
+  users: [String]
+});
 var Place = mongoose.model('Place', PlaceSchema);
 var User = mongoose.model('User', UserSchema);
+var Group = mongoose.model('Group', GroupSchema);
 
 // API Routes
 app.post('/addUser', async function(req, res) {
   var returnMessage;
   var user = new User({ _id: req.body.username, name: req.body.name, visitedPlaces: [], groups: [[]] });
   await user.save(function (err) {
-    console.log("Error: " + err);
     if (err) {
+      console.log("Error: " + err);
       res.send("Must choose a username that has not been taken by another user");
     } else {
       res.send(user);
@@ -43,13 +47,22 @@ app.post('/addUser', async function(req, res) {
   });
 });
 app.post('/addGroup', async function(req, res) {
-  if (req.body.group.includes(req.body.username)) {
-    // TODO Have list of groups be added to all the 
-    await User.findOneAndUpdate({ _id: req.body.username }, { $push: { groups: req.body.group }});
-    res.send(req.body.group);
-  } else {
-    res.send("Must include current user in the group list");
-  }
+  var group = new Group({ users: req.body.group });
+  await group.save(function (err) { if (err) res.send(err); });
+
+  req.body.group.forEach(async function(username) {
+    await User.findOneAndUpdate({ _id: username }, { $push: { groupIDs: group._id.toString() }});
+  });
+  res.send(group)
+});
+app.delete('/removeGroup', async function(req, res) {
+  var group = await Group.findOne({ _id: req.body.groupID });
+  group.users.forEach(async function(username) {
+    await User.findOneAndUpdate({ _id: username }, { $pull: { groupIDs: req.body.groupID }});
+  });
+  
+  await Group.findOneAndRemove({ _id: req.body.groupID });
+  res.send("Successfully removed group " + req.body.groupID);
 });
 app.get('/getUser', async function(req, res) {
   await User.findOne({ _id: req.body.username }, async function(err, results) {
