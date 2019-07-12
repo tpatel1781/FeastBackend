@@ -22,6 +22,7 @@ var PlaceSchema = new Schema({
 var UserSchema = new Schema({
 	_id: String,
 	name: String,
+	email: String,
 	visitedPlaces: [PlaceSchema],
 	groupIDs: [String]
 });
@@ -35,14 +36,22 @@ var Group = mongoose.model('Group', GroupSchema);
 // API Routes
 app.post('/addUser', async function (req, res) {
 	var returnMessage;
-	var user = new User({ _id: req.body.username, name: req.body.name, visitedPlaces: [], groups: [[]] });
-	await user.save(function (err) {
-		if (err) {
-			console.log("Error: " + err);
-			res.send("Must choose a username that has not been taken by another user");
+	var user = new User({ _id: req.body.username, name: req.body.name, email: req.body.email, visitedPlaces: [], groups: [[]] });
+	await User.find({ email: req.body.email }, async function(err, results) {
+		if (err || results.length) {
+			console.log(err);
+			console.log(results);
+			res.status(500).send("Must choose an email that has not been taken by another user");
 		} else {
-			res.send(user);
-			console.log('Added user ' + req.body.name);
+			await user.save(function (err) {
+				if (err) {
+					console.log("Error: " + err);
+					res.status(500).send("Must choose a username that has not been taken by another user");
+				} else {
+					res.send(user);
+					console.log('Added user ' + req.body.name);
+				}
+			});
 		}
 	});
 });
