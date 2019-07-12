@@ -10,8 +10,8 @@ mongoose.set('useFindAndModify', false);
 var port = process.env.PORT || 4000;
 
 // Connect to the 'testPlacesDb' database
-mongoose.connect("mongodb://localhost/testPlacesDb");
-// mongoose.connect("mongodb+srv://user:rDZYNBtxxA20RCt7@cluster0-dhybl.mongodb.net/test?retryWrites=true&w=majority");
+// mongoose.connect("mongodb://localhost/testPlacesDb");
+mongoose.connect("mongodb+srv://user:rDZYNBtxxA20RCt7@cluster0-dhybl.mongodb.net/test?retryWrites=true&w=majority");
 
 // Define data schema
 var PlaceSchema = new Schema({
