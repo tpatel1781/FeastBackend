@@ -41,12 +41,12 @@ app.post('/addUser', async function (req, res) {
 		if (err || results.length) {
 			console.log(err);
 			console.log(results);
-			res.status(500).send("Must choose an email that has not been taken by another user");
+			res.status(400).send("Must choose an email that has not been taken by another user");
 		} else {
 			await user.save(function (err) {
 				if (err) {
 					console.log("Error: " + err);
-					res.status(500).send("Must choose a username that has not been taken by another user");
+					res.status(400).send("Must choose a username that has not been taken by another user");
 				} else {
 					res.send(user);
 					console.log('Added user ' + req.body.name);
