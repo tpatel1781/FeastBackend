@@ -27,6 +27,7 @@ var UserSchema = new Schema({
 	groupIDs: [String]
 });
 var GroupSchema = new Schema({
+	name: String,
 	users: [String]
 });
 var Place = mongoose.model('Place', PlaceSchema);
@@ -56,7 +57,7 @@ app.post('/addUser', async function (req, res) {
 	});
 });
 app.post('/addGroup', async function (req, res) {
-	var group = new Group({ users: req.body.group });
+	var group = new Group({ name: req.body.name, users: req.body.group });
 	var error = false;
 	var invalidUsers = [];
 	// Check that all of the usernames given are registered users
