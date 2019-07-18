@@ -91,7 +91,7 @@ app.delete('/removeGroup', async function (req, res) {
 	res.send("Successfully removed group " + req.body.groupID);
 });
 app.get('/getGroup', async function(req, res) {
-	await User.findOne({ _id: req.query.groupID }, async function(err, results) {
+	await Group.findOne({ _id: req.query.groupID }, async function(err, results) {
 		if (err || !results) {
 			res.status(404).send('Cannot find group: \'' + req.query.groupID + '\'');
 		} else {
