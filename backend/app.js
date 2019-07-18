@@ -10,8 +10,8 @@ mongoose.set('useFindAndModify', false);
 var port = process.env.PORT || 4000;
 
 // Connect to the 'testPlacesDb' database
-// mongoose.connect("mongodb://localhost/testPlacesDb");
-mongoose.connect("mongodb+srv://user:rDZYNBtxxA20RCt7@cluster0-dhybl.mongodb.net/test?retryWrites=true&w=majority");
+mongoose.connect("mongodb://localhost/testPlacesDb");
+// mongoose.connect("mongodb+srv://user:rDZYNBtxxA20RCt7@cluster0-dhybl.mongodb.net/test?retryWrites=true&w=majority");
 
 // Define data schema
 var PlaceSchema = new Schema({
@@ -89,6 +89,15 @@ app.delete('/removeGroup', async function (req, res) {
 
 	await Group.findOneAndRemove({ _id: req.body.groupID });
 	res.send("Successfully removed group " + req.body.groupID);
+});
+app.get('/getGroup', async function(req, res) {
+	await User.findOne({ _id: req.query.groupID }, async function(err, results) {
+		if (err || !results) {
+			res.status(404).send('Cannot find group: \'' + req.body.groupID + '\'');
+		} else {
+			res.send(results);
+		}
+	});
 });
 app.get('/getUser', async function (req, res) {
 	await User.findOne({ _id: req.query.username }, async function (err, results) {
