@@ -42,12 +42,12 @@ app.post('/addUser', async function (req, res) {
 		if (err || results.length) {
 			console.log(err);
 			console.log(results);
-			res.send("Must choose an email that has not been taken by another user");
+			res.status(400).send("Must choose an email that has not been taken by another user");
 		} else {
 			await user.save(function (err) {
 				if (err) {
 					console.log("Error: " + err);
-					res.send("Must choose a username that has not been taken by another user");
+					res.status(400).send("Must choose a username that has not been taken by another user");
 				} else {
 					res.send(user);
 					console.log('Added user ' + req.body.name);
@@ -93,7 +93,7 @@ app.delete('/removeGroup', async function (req, res) {
 app.get('/getGroup', async function(req, res) {
 	await Group.findOne({ _id: req.query.groupID }, async function(err, results) {
 		if (err || !results) {
-			res.send('Cannot find group: \'' + req.query.groupID + '\'');
+			res.status(404).send('Cannot find group: \'' + req.query.groupID + '\'');
 		} else {
 			res.send(results);
 		}
@@ -102,7 +102,7 @@ app.get('/getGroup', async function(req, res) {
 app.get('/getUser', async function (req, res) {
 	await User.findOne({ _id: req.query.username }, async function (err, results) {
 		if (err || !results) {
-			res.send('Cannot find user: \'' + req.query.username + '\'');
+			res.status(404).send('Cannot find user: \'' + req.query.username + '\'');
 		} else {
 			res.send(results);
 		}
