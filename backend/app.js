@@ -38,7 +38,6 @@ UserSchema.index({_id: 1}, { collation: { locale: 'en', strength: 2 } })
 
 // API Routes
 app.post('/addUser', async function (req, res) {
-	var returnMessage;
 	var user = new User({ _id: req.body.username, name: req.body.name, email: req.body.email, visitedPlaces: [], groups: [[]] });
 	await User.find({ email: req.body.email }, async function(err, results) {
 		if (err || results.length) {
