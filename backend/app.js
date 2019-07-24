@@ -34,6 +34,8 @@ var Place = mongoose.model('Place', PlaceSchema);
 var User = mongoose.model('User', UserSchema);
 var Group = mongoose.model('Group', GroupSchema);
 
+UserSchema.index({_id: 1}, { collation: { locale: 'en', strength: 2 } })
+
 // API Routes
 app.post('/addUser', async function (req, res) {
 	var returnMessage;
@@ -106,7 +108,7 @@ app.get('/getUser', async function (req, res) {
 		} else {
 			res.send(results);
 		}
-	});
+	}).collation( { locale: 'en', strength: 2 } );
 });
 app.post('/addPlace', async function (req, res) {
 	await User.findOne({ _id: req.body.username }, async function (err, results) {
