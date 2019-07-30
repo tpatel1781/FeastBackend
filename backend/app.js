@@ -10,14 +10,15 @@ mongoose.set('useFindAndModify', false);
 var port = process.env.PORT || 4000;
 
 // Connect to the 'testPlacesDb' database
-// mongoose.connect("mongodb://localhost/testPlacesDb");
-mongoose.connect("mongodb+srv://user:rDZYNBtxxA20RCt7@cluster0-dhybl.mongodb.net/test?retryWrites=true&w=majority");
+mongoose.connect("mongodb://localhost/testPlacesDb");
+// mongoose.connect("mongodb+srv://user:rDZYNBtxxA20RCt7@cluster0-dhybl.mongodb.net/test?retryWrites=true&w=majority");
 
 // Define data schema
 var PlaceSchema = new Schema({
 	googleID: String,
 	name: String,
-	rating: Number
+	rating: Number,
+	visitedDate: Date
 });
 var UserSchema = new Schema({
 	_id: String,
@@ -142,31 +143,15 @@ app.delete('/removePlace', async function (req, res) {
 app.post('/addGroupPlace', async function (req, res) {
 	await Group.findOne({ _id: req.body.groupID }, async function (err, results) {
 		if (err) return err;
-		const correctPlace = []
-		// Get the list of existing places
-		results.visitedPlaces.forEach(place => {
-			if (place.googleID === req.body.googleID) { correctPlace.push(place); }
-		});
-		if (!correctPlace.length) {
-			// Group does not already have this place, add it to visitedPlaces
-			var place = new Place({ googleID: req.body.googleID, name: req.body.name, rating: req.body.rating });
-			await Group.findOneAndUpdate({ _id: req.body.groupID }, { $push: { visitedPlaces: place } });
-			res.send('Added place (Google ID): ' + req.body.googleID + ' to group ' + req.body.groupID);
-		} else {
-			// User already has this place, update existing item
-			await Group.findOneAndUpdate({ "visitedPlaces.googleID": req.body.googleID, _id: req.body.groupID }, {
-				$set: {
-					'visitedPlaces.$.name': req.body.name,
-					'visitedPlaces.$.rating': req.body.rating
-				}
-			});
-			res.send('Updated place (Google ID): ' + req.body.googleID + ' for group ' + req.body.groupID);
-		}
+		
+		// Group does not already have this place, add it to visitedPlaces
+		const date = (!req.body.visitedDate) ? new Date() : new Date(parseFloat(req.body.visitedDate));
+		console.log("My Date: " + date);
+		var place = new Place({ googleID: req.body.googleID, name: req.body.name, rating: req.body.rating, visitedDate: date});
+		await Group.findOneAndUpdate({ _id: req.body.groupID }, { $push: { visitedPlaces: place } });
+		res.send('Added place (Google ID): ' + req.body.googleID + ' to group ' + req.body.groupID);
+		
 	});
-});
-app.delete('/removeGroupPlace', async function (req, res) {
-	await Group.update({ _id: req.body.groupID }, { $pull: { visitedPlaces: { googleID: req.body.googleID } } });
-	res.send('Successfully removed place (Google ID): ' + req.body.googleID);
 });
 
 mongoose.connection.once("open", function () {
