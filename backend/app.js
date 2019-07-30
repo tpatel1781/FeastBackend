@@ -10,8 +10,8 @@ mongoose.set('useFindAndModify', false);
 var port = process.env.PORT || 4000;
 
 // Connect to the 'testPlacesDb' database
-// mongoose.connect("mongodb://localhost/testPlacesDb");
-mongoose.connect("mongodb+srv://user:rDZYNBtxxA20RCt7@cluster0-dhybl.mongodb.net/test?retryWrites=true&w=majority");
+mongoose.connect("mongodb://localhost/testPlacesDb");
+// mongoose.connect("mongodb+srv://user:rDZYNBtxxA20RCt7@cluster0-dhybl.mongodb.net/test?retryWrites=true&w=majority");
 
 // Define data schema
 var PlaceSchema = new Schema({
@@ -28,7 +28,8 @@ var UserSchema = new Schema({
 });
 var GroupSchema = new Schema({
 	name: String,
-	users: [String]
+	users: [String],
+	visitedPlaces: [PlaceSchema]
 });
 var Place = mongoose.model('Place', PlaceSchema);
 var User = mongoose.model('User', UserSchema);
@@ -58,7 +59,7 @@ app.post('/addUser', async function (req, res) {
 	});
 });
 app.post('/addGroup', async function (req, res) {
-	var group = new Group({ name: req.body.name, users: req.body.group });
+	var group = new Group({ name: req.body.name, users: req.body.group, visitedPlaces: [] });
 	var error = false;
 	var invalidUsers = [];
 	// Check that all of the usernames given are registered users
@@ -113,21 +114,17 @@ app.post('/addPlace', async function (req, res) {
 	await User.findOne({ _id: req.body.username }, async function (err, results) {
 		if (err) return err;
 		const correctPlace = []
-		// Get the list of existing 
+		// Get the list of existing places
 		results.visitedPlaces.forEach(place => {
-			if (place.googleID === req.body.googleID) {
-				correctPlace.push(place);
-			}
+			if (place.googleID === req.body.googleID) { correctPlace.push(place); }
 		});
 		if (!correctPlace.length) {
 			// User does not already have this place, add it to visitedPlaces
-			console.log("User does not already have this place");
 			var place = new Place({ googleID: req.body.googleID, name: req.body.name, rating: req.body.rating });
 			await User.findOneAndUpdate({ _id: req.body.username }, { $push: { visitedPlaces: place } });
 			res.send('Added place (Google ID): ' + req.body.googleID + ' to user ' + req.body.username);
 		} else {
 			// User already has this place, update existing item
-			console.log("User already has this place");
 			await User.findOneAndUpdate({ "visitedPlaces.googleID": req.body.googleID, _id: req.body.username }, {
 				$set: {
 					'visitedPlaces.$.name': req.body.name,
@@ -140,6 +137,35 @@ app.post('/addPlace', async function (req, res) {
 });
 app.delete('/removePlace', async function (req, res) {
 	await User.update({ _id: req.body.username }, { $pull: { visitedPlaces: { googleID: req.body.googleID } } });
+	res.send('Successfully removed place (Google ID): ' + req.body.googleID);
+});
+app.post('/addGroupPlace', async function (req, res) {
+	await Group.findOne({ _id: req.body.groupID }, async function (err, results) {
+		if (err) return err;
+		const correctPlace = []
+		// Get the list of existing places
+		results.visitedPlaces.forEach(place => {
+			if (place.googleID === req.body.googleID) { correctPlace.push(place); }
+		});
+		if (!correctPlace.length) {
+			// Group does not already have this place, add it to visitedPlaces
+			var place = new Place({ googleID: req.body.googleID, name: req.body.name, rating: req.body.rating });
+			await Group.findOneAndUpdate({ _id: req.body.groupID }, { $push: { visitedPlaces: place } });
+			res.send('Added place (Google ID): ' + req.body.googleID + ' to group ' + req.body.groupID);
+		} else {
+			// User already has this place, update existing item
+			await Group.findOneAndUpdate({ "visitedPlaces.googleID": req.body.googleID, _id: req.body.groupID }, {
+				$set: {
+					'visitedPlaces.$.name': req.body.name,
+					'visitedPlaces.$.rating': req.body.rating
+				}
+			});
+			res.send('Updated place (Google ID): ' + req.body.googleID + ' for group ' + req.body.groupID);
+		}
+	});
+});
+app.delete('/removeGroupPlace', async function (req, res) {
+	await Group.update({ _id: req.body.groupID }, { $pull: { visitedPlaces: { googleID: req.body.googleID } } });
 	res.send('Successfully removed place (Google ID): ' + req.body.googleID);
 });
 
