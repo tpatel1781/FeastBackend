@@ -30,7 +30,8 @@ var UserSchema = new Schema({
 var GroupSchema = new Schema({
 	name: String,
 	users: [String],
-	visitedPlaces: [PlaceSchema]
+	visitedPlaces: [PlaceSchema],
+	messages: [mongoose.Mixed]
 });
 var Place = mongoose.model('Place', PlaceSchema);
 var User = mongoose.model('User', UserSchema);
@@ -153,6 +154,14 @@ app.post('/addGroupPlace', async function (req, res) {
 		
 	});
 });
+app.post('/addMessageToGroup', async function (req, res) {
+	await Group.findOne({ _id: req.body.groupID }, async function (err) {
+		if (err) return err;
+
+		await Group.findOneAndUpdate({ _id: req.body.groupID }, { $push: { messages: req.body.message } });
+		res.send(req.body.message);
+	})
+})
 
 mongoose.connection.once("open", function () {
 	// Start the server
