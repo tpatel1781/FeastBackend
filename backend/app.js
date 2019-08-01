@@ -158,7 +158,7 @@ app.post('/addMessageToGroup', async function (req, res) {
 	await Group.findOne({ _id: req.body.groupID }, async function (err) {
 		if (err) return err;
 
-		await Group.findOneAndUpdate({ _id: req.body.groupID }, { $push: { messages: { $each: [req.body.message], $position: 0 } } });
+		await Group.findOneAndUpdate({ _id: req.body.groupID }, { $push: { messages: req.body.message } });
 		res.send(req.body.message);
 	})
 })
