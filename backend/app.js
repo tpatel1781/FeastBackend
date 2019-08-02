@@ -3,6 +3,9 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var app = express();
 var bodyParser = require('body-parser');
+var server = require('http').Server(express);
+var io = require('socket.io')(server);
+
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json())
 mongoose.set('useFindAndModify', false);
@@ -159,6 +162,7 @@ app.post('/addMessageToGroup', async function (req, res) {
 		if (err) return err;
 
 		await Group.findOneAndUpdate({ _id: req.body.groupID }, { $push: { messages: { $each: req.body.message, $position: 0 } } });
+		io.emit(req.body.groupID, req.body.message);
 		res.send(req.body.message);
 	})
 })
