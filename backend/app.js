@@ -163,10 +163,6 @@ app.post('/addMessageToGroup', async function (req, res) {
 		res.send(req.body.message);
 	})
 })
-io.on('connection', function (socket) {
-	io.emit('chat message', msg);
-	console.log("")
-});
 
 mongoose.connection.once("open", function () {
 	// Start the server
