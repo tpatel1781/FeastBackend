@@ -5,7 +5,7 @@ var app = express();
 var bodyParser = require('body-parser');
 const socketIo = require("socket.io");
 const server = require('http').createServer(app);
-const io = socketIo(server);
+const io = socketIo.listen(server);
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json())
