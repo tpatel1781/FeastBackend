@@ -3,7 +3,7 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var app = express();
 var bodyParser = require('body-parser');
-var server = require('http').Server(express);
+var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
 
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -165,8 +165,9 @@ app.post('/addMessageToGroup', async function (req, res) {
 		res.send(req.body.message);
 	})
 })
-io.on('connection', function(socket){
+io.on('connection', function(socket) {
 	  io.emit('chat message', msg);
+	  console.log("")
 });
 
 mongoose.connection.once("open", function () {
