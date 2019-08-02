@@ -3,9 +3,6 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var app = express();
 var bodyParser = require('body-parser');
-const socketIo = require("socket.io");
-const server = require('http').createServer(app);
-const io = socketIo.listen(server);
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json())
@@ -42,15 +39,6 @@ var User = mongoose.model('User', UserSchema);
 var Group = mongoose.model('Group', GroupSchema);
 
 UserSchema.index({ _id: 1 }, { collation: { locale: 'en', strength: 2 } })
-
-io.on("connection", socket => {
-	console.log("New client connected");
-	socket.on('message', (messageWithGroup) => onMessageRecieved(messageWithGroup, socket));
-});
-
-function onMessageRecieved(messageWithGroup, senderSocket) {
-	senderSocket.broadcast.emit(messageWithGroup.groupID, messageWithGroup.message);
-}
 
 // API Routes
 app.post('/addUser', async function (req, res) {
