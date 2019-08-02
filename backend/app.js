@@ -3,8 +3,9 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var app = express();
 var bodyParser = require('body-parser');
-var server = require('http').Server(app);
-var io = require('socket.io').listen(server);
+const socketIo = require("socket.io");
+const server = http.createServer(app);
+const io = socketIo(server);
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json())
@@ -40,12 +41,21 @@ var Place = mongoose.model('Place', PlaceSchema);
 var User = mongoose.model('User', UserSchema);
 var Group = mongoose.model('Group', GroupSchema);
 
-UserSchema.index({_id: 1}, { collation: { locale: 'en', strength: 2 } })
+UserSchema.index({ _id: 1 }, { collation: { locale: 'en', strength: 2 } })
+
+io.on("connection", socket => {
+	console.log("New client connected");
+	socket.on('message', (messageWithGroup) => onMessageRecieved(messageWithGroup, socket));
+});
+
+function onMessageRecieved(messageWithGroup, senderSocket) {
+	senderSocket.broadcast.emit(messageWithGroup.groupID, messageWithGroup.message);
+}
 
 // API Routes
 app.post('/addUser', async function (req, res) {
 	var user = new User({ _id: req.body.username, name: req.body.name, email: req.body.email, visitedPlaces: [], groups: [[]] });
-	await User.find({ email: req.body.email }, async function(err, results) {
+	await User.find({ email: req.body.email }, async function (err, results) {
 		if (err || results.length) {
 			console.log(err);
 			console.log(results);
@@ -97,8 +107,8 @@ app.delete('/removeGroup', async function (req, res) {
 	await Group.findOneAndRemove({ _id: req.body.groupID });
 	res.send("Successfully removed group " + req.body.groupID);
 });
-app.get('/getGroup', async function(req, res) {
-	await Group.findOne({ _id: req.query.groupID }, async function(err, results) {
+app.get('/getGroup', async function (req, res) {
+	await Group.findOne({ _id: req.query.groupID }, async function (err, results) {
 		if (err || !results) {
 			res.status(404).send('Cannot find group: \'' + req.query.groupID + '\'');
 		} else {
@@ -113,7 +123,7 @@ app.get('/getUser', async function (req, res) {
 		} else {
 			res.send(results);
 		}
-	}).collation( { locale: 'en', strength: 2 } );
+	}).collation({ locale: 'en', strength: 2 });
 });
 app.post('/addPlace', async function (req, res) {
 	await User.findOne({ _id: req.body.username }, async function (err, results) {
@@ -147,14 +157,14 @@ app.delete('/removePlace', async function (req, res) {
 app.post('/addGroupPlace', async function (req, res) {
 	await Group.findOne({ _id: req.body.groupID }, async function (err, results) {
 		if (err) return err;
-		
+
 		// Group does not already have this place, add it to visitedPlaces
 		const date = (!req.body.visitedDate) ? new Date() : new Date(parseFloat(req.body.visitedDate));
 		console.log("My Date: " + date);
-		var place = new Place({ googleID: req.body.googleID, name: req.body.name, rating: req.body.rating, visitedDate: date});
+		var place = new Place({ googleID: req.body.googleID, name: req.body.name, rating: req.body.rating, visitedDate: date });
 		await Group.findOneAndUpdate({ _id: req.body.groupID }, { $push: { visitedPlaces: place } });
 		res.send('Added place (Google ID): ' + req.body.googleID + ' to group ' + req.body.groupID);
-		
+
 	});
 });
 app.post('/addMessageToGroup', async function (req, res) {
@@ -165,9 +175,9 @@ app.post('/addMessageToGroup', async function (req, res) {
 		res.send(req.body.message);
 	})
 })
-io.on('connection', function(socket) {
-	  io.emit('chat message', msg);
-	  console.log("")
+io.on('connection', function (socket) {
+	io.emit('chat message', msg);
+	console.log("")
 });
 
 mongoose.connection.once("open", function () {
