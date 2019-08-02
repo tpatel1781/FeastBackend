@@ -162,10 +162,15 @@ app.post('/addMessageToGroup', async function (req, res) {
 		if (err) return err;
 
 		await Group.findOneAndUpdate({ _id: req.body.groupID }, { $push: { messages: { $each: req.body.message, $position: 0 } } });
-		io.emit(req.body.groupID, req.body.message);
+		// io.emit(req.body.groupID, req.body.message);
 		res.send(req.body.message);
 	})
 })
+io.on('connection', function(socket){
+	socket.on('chat message', function(msg){
+	  io.emit('chat message', msg);
+	});
+});
 
 mongoose.connection.once("open", function () {
 	// Start the server
