@@ -4,7 +4,7 @@ var Schema = mongoose.Schema;
 var app = express();
 var bodyParser = require('body-parser');
 var server = require('http').Server(express);
-var io = require('socket.io')(server);
+var io = require('socket.io').listen(server);
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json())
