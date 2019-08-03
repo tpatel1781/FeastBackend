@@ -79,7 +79,7 @@ app.post('/addGroup', async function (req, res) {
 	} else {
 		// All of the usernames in the given list are registered users
 		await group.save(function (err) { if (err) return res.send(err); });
-		// Add the group ID to each user
+		// Add the group ID to each user. Frontend ensures the same user cannot be added to a group multiple times
 		req.body.group.forEach(async function (username) {
 			await User.findOneAndUpdate({ _id: username }, { $push: { groupIDs: group._id.toString() } });
 		});
@@ -143,8 +143,8 @@ app.delete('/removePlace', async function (req, res) {
 	res.send('Successfully removed place (Google ID): ' + req.body.googleID);
 });
 app.post('/addGroupPlace', async function (req, res) {
-	await Group.findOne({ _id: req.body.groupID }, async function (err, results) {
-		if (err) return err;
+	await Group.findOne({ _id: req.body.groupID }, async function (err) {
+		if (err) res.send('Invalid groupID');
 
 		// Group does not already have this place, add it to visitedPlaces
 		const date = (!req.body.visitedDate) ? new Date() : new Date(parseFloat(req.body.visitedDate));
@@ -157,12 +157,49 @@ app.post('/addGroupPlace', async function (req, res) {
 });
 app.post('/addMessageToGroup', async function (req, res) {
 	await Group.findOne({ _id: req.body.groupID }, async function (err) {
-		if (err) return err;
+		if (err) res.send('Invalid groupID');
 
 		await Group.findOneAndUpdate({ _id: req.body.groupID }, { $push: { messages: { $each: req.body.message, $position: 0 } } });
 		res.send(req.body.message);
-	})
-})
+	});
+});
+app.post('/editGroupName', async function (req, res) {
+	await Group.findOne({ _id: req.body.groupID }, async function (err) {
+		if (err) res.send('Invalid groupID');
+
+		await Group.findOneAndUpdate({ _id: req.body.groupID }, { name: req.body.name });
+		res.send("Successfully changed group name to " + req.body.name);
+	});
+});
+app.post('/addUserToGroup', async function (req, res) {
+	await User.findOne({ _id: req.body.username }, async function (err, results) {
+		if (err || !results) { // If the user does not already exist
+			res.send("Could not add user " + req.body.username);
+		} else {
+			// User exists, frontend will prevent a user being added multiple times
+			await Group.findOne({ _id: req.body.groupID }, async function (err) {
+				if (err) res.send("Invalid groupID");
+		
+				await Group.findOneAndUpdate({ _id: req.body.groupID }, { $push: {users: req.body.username } });
+				res.send("Successfully added " + req.body.username + " to group " + req.body.groupID);
+			});
+		}
+	});
+});
+app.delete('/removeUserFromGroup', async function(req, res) {
+	await User.findOne({ _id: req.body.username }, async function (err, results) {
+		if (err || !results) {
+			res.send("Could not remove user " + req.body.username);
+		} else {
+			await Group.findOne({ _id: req.body.groupID }, async function (err) {
+				if (err) res.send('Invalid groupID');
+
+				await Group.findOneAndUpdate({ _id: req.body.groupID }, { $pull: { users: req.body.username }});
+				res.send('Successfully removed user ' + req.body.username + ' from group');
+			});
+		}
+	});
+});
 
 mongoose.connection.once("open", function () {
 	// Start the server
