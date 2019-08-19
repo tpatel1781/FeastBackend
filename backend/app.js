@@ -32,7 +32,8 @@ var GroupSchema = new Schema({
 	name: String,
 	users: [String],
 	visitedPlaces: [PlaceSchema],
-	messages: [mongoose.Mixed]
+	messages: [mongoose.Mixed],
+	isPollOpen: Boolean
 });
 var Place = mongoose.model('Place', PlaceSchema);
 var User = mongoose.model('User', UserSchema);
@@ -62,7 +63,7 @@ app.post('/addUser', async function (req, res) {
 	});
 });
 app.post('/addGroup', async function (req, res) {
-	var group = new Group({ name: req.body.name, users: req.body.group, visitedPlaces: [] });
+	var group = new Group({ name: req.body.name, users: req.body.group, visitedPlaces: [], isPollOpen: false });
 	var error = false;
 	var invalidUsers = [];
 	// Check that all of the usernames given are registered users
@@ -104,6 +105,10 @@ app.get('/getGroup', async function (req, res) {
 		}
 	});
 });
+app.post('/updatePoll', async function (req, res) {
+	await Group.findOneAndUpdate({ _id: req.body.groupID }, { isPollOpen: req.body.pollState });
+	res.send("Poll state is now " + req.body.pollState);
+})
 app.get('/getUser', async function (req, res) {
 	await User.findOne({ _id: req.query.username }, async function (err, results) {
 		if (err || !results) {
