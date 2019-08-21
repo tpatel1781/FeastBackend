@@ -49,6 +49,8 @@ var PollPlace = mongoose.model('PollPlace', PollPlaceSchema)
 UserSchema.index({ _id: 1 }, { collation: { locale: 'en', strength: 2 } })
 
 // API Routes
+
+// USER ENDPOINTS
 app.post('/addUser', async function (req, res) {
 	var user = new User({ _id: req.body.username, name: req.body.name, email: req.body.email, visitedPlaces: [], groups: [[]] });
 	await User.find({ email: req.body.email }, async function (err, results) {
@@ -69,6 +71,46 @@ app.post('/addUser', async function (req, res) {
 		}
 	});
 });
+app.get('/getUser', async function (req, res) {
+	await User.findOne({ _id: req.query.username }, async function (err, results) {
+		if (err || !results) {
+			res.status(404).send('Cannot find user: \'' + req.query.username + '\'');
+		} else {
+			res.send(results);
+		}
+	}).collation({ locale: 'en', strength: 2 });
+});
+app.post('/addPlace', async function (req, res) {
+	await User.findOne({ _id: req.body.username }, async function (err, results) {
+		if (err) return err;
+		const correctPlace = []
+		// Get the list of existing places
+		results.visitedPlaces.forEach(place => {
+			if (place.googleID === req.body.googleID) { correctPlace.push(place); }
+		});
+		if (!correctPlace.length) {
+			// User does not already have this place, add it to visitedPlaces
+			var place = new Place({ googleID: req.body.googleID, name: req.body.name, rating: req.body.rating });
+			await User.findOneAndUpdate({ _id: req.body.username }, { $push: { visitedPlaces: place } });
+			res.send('Added place (Google ID): ' + req.body.googleID + ' to user ' + req.body.username);
+		} else {
+			// User already has this place, update existing item
+			await User.findOneAndUpdate({ "visitedPlaces.googleID": req.body.googleID, _id: req.body.username }, {
+				$set: {
+					'visitedPlaces.$.name': req.body.name,
+					'visitedPlaces.$.rating': req.body.rating
+				}
+			});
+			res.send('Updated place (Google ID): ' + req.body.googleID + ' for user ' + req.body.username);
+		}
+	});
+});
+app.delete('/removePlace', async function (req, res) {
+	await User.update({ _id: req.body.username }, { $pull: { visitedPlaces: { googleID: req.body.googleID } } });
+	res.send('Successfully removed place (Google ID): ' + req.body.googleID);
+});
+
+// GROUP ENDPOINTS
 app.post('/addGroup', async function (req, res) {
 	var group = new Group({ name: req.body.name, users: req.body.group, visitedPlaces: [], isPollOpen: false, pollPlaces: [] });
 	var error = false;
@@ -112,48 +154,34 @@ app.get('/getGroup', async function (req, res) {
 		}
 	});
 });
-app.post('/updatePoll', async function (req, res) {
-	await Group.findOneAndUpdate({ _id: req.body.groupID }, { isPollOpen: req.body.pollState });
-	if (!req.body.pollState) { await Group.findOneAndUpdate({ _id: req.body.groupID }, { pollPlaces: [] }); }
-	res.send("Poll state is now " + req.body.pollState);
-})
-app.get('/getUser', async function (req, res) {
-	await User.findOne({ _id: req.query.username }, async function (err, results) {
-		if (err || !results) {
-			res.status(404).send('Cannot find user: \'' + req.query.username + '\'');
-		} else {
-			res.send(results);
-		}
-	}).collation({ locale: 'en', strength: 2 });
-});
-app.post('/addPlace', async function (req, res) {
+app.post('/addUserToGroup', async function (req, res) {
 	await User.findOne({ _id: req.body.username }, async function (err, results) {
-		if (err) return err;
-		const correctPlace = []
-		// Get the list of existing places
-		results.visitedPlaces.forEach(place => {
-			if (place.googleID === req.body.googleID) { correctPlace.push(place); }
-		});
-		if (!correctPlace.length) {
-			// User does not already have this place, add it to visitedPlaces
-			var place = new Place({ googleID: req.body.googleID, name: req.body.name, rating: req.body.rating });
-			await User.findOneAndUpdate({ _id: req.body.username }, { $push: { visitedPlaces: place } });
-			res.send('Added place (Google ID): ' + req.body.googleID + ' to user ' + req.body.username);
+		if (err || !results) { // If the user does not already exist
+			res.send("Could not add user " + req.body.username);
 		} else {
-			// User already has this place, update existing item
-			await User.findOneAndUpdate({ "visitedPlaces.googleID": req.body.googleID, _id: req.body.username }, {
-				$set: {
-					'visitedPlaces.$.name': req.body.name,
-					'visitedPlaces.$.rating': req.body.rating
-				}
+			// User exists, frontend will prevent a user being added multiple times
+			await Group.findOne({ _id: req.body.groupID }, async function (err) {
+				if (err) res.send("Invalid groupID");
+		
+				await Group.findOneAndUpdate({ _id: req.body.groupID }, { $push: {users: req.body.username } });
+				res.send("Successfully added " + req.body.username + " to group " + req.body.groupID);
 			});
-			res.send('Updated place (Google ID): ' + req.body.googleID + ' for user ' + req.body.username);
 		}
 	});
 });
-app.delete('/removePlace', async function (req, res) {
-	await User.update({ _id: req.body.username }, { $pull: { visitedPlaces: { googleID: req.body.googleID } } });
-	res.send('Successfully removed place (Google ID): ' + req.body.googleID);
+app.delete('/removeUserFromGroup', async function(req, res) {
+	await User.findOne({ _id: req.body.username }, async function (err, results) {
+		if (err || !results) {
+			res.send("Could not remove user " + req.body.username);
+		} else {
+			await Group.findOne({ _id: req.body.groupID }, async function (err) {
+				if (err) res.send('Invalid groupID');
+
+				await Group.findOneAndUpdate({ _id: req.body.groupID }, { $pull: { users: req.body.username }});
+				res.send('Successfully removed user ' + req.body.username + ' from group');
+			});
+		}
+	});
 });
 app.post('/addGroupPlace', async function (req, res) {
 	await Group.findOne({ _id: req.body.groupID }, async function (err) {
@@ -184,34 +212,12 @@ app.post('/editGroupName', async function (req, res) {
 		res.send("Successfully changed group name to " + req.body.name);
 	});
 });
-app.post('/addUserToGroup', async function (req, res) {
-	await User.findOne({ _id: req.body.username }, async function (err, results) {
-		if (err || !results) { // If the user does not already exist
-			res.send("Could not add user " + req.body.username);
-		} else {
-			// User exists, frontend will prevent a user being added multiple times
-			await Group.findOne({ _id: req.body.groupID }, async function (err) {
-				if (err) res.send("Invalid groupID");
-		
-				await Group.findOneAndUpdate({ _id: req.body.groupID }, { $push: {users: req.body.username } });
-				res.send("Successfully added " + req.body.username + " to group " + req.body.groupID);
-			});
-		}
-	});
-});
-app.delete('/removeUserFromGroup', async function(req, res) {
-	await User.findOne({ _id: req.body.username }, async function (err, results) {
-		if (err || !results) {
-			res.send("Could not remove user " + req.body.username);
-		} else {
-			await Group.findOne({ _id: req.body.groupID }, async function (err) {
-				if (err) res.send('Invalid groupID');
 
-				await Group.findOneAndUpdate({ _id: req.body.groupID }, { $pull: { users: req.body.username }});
-				res.send('Successfully removed user ' + req.body.username + ' from group');
-			});
-		}
-	});
+// POLL METHODS
+app.post('/updatePoll', async function (req, res) {
+	await Group.findOneAndUpdate({ _id: req.body.groupID }, { isPollOpen: req.body.pollState });
+	if (!req.body.pollState) { await Group.findOneAndUpdate({ _id: req.body.groupID }, { pollPlaces: [] }); }
+	res.send("Poll state is now " + req.body.pollState);
 });
 app.post('/addPollPlaces', async function (req, res) {
 	var pollPlacesList = []
