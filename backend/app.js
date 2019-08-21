@@ -21,6 +21,11 @@ var PlaceSchema = new Schema({
 	rating: Number,
 	visitedDate: Date
 });
+var PollPlaceSchema = new Schema({
+	place: mongoose.Mixed,
+	upvotes: Number,
+	downvotes: Number
+})
 var UserSchema = new Schema({
 	_id: String,
 	name: String,
@@ -33,13 +38,25 @@ var GroupSchema = new Schema({
 	users: [String],
 	visitedPlaces: [PlaceSchema],
 	messages: [mongoose.Mixed],
-	isPollOpen: Boolean
+	isPollOpen: Boolean,
+	pollPlaces: [PollPlaceSchema]
 });
 var Place = mongoose.model('Place', PlaceSchema);
 var User = mongoose.model('User', UserSchema);
 var Group = mongoose.model('Group', GroupSchema);
+var PollPlace = mongoose.model('PollPlace', PollPlaceSchema)
 
 UserSchema.index({ _id: 1 }, { collation: { locale: 'en', strength: 2 } })
+
+
+app.post('/addPollPlaces', function (req, res) {
+	var pollPlacesList = []
+	for (i = 0; i < req.body.places.length; i++) {
+		pollPlacesList.push(new PollPlace({ place: req.body.places[i], upvotes: 0, downvotes: 0}))
+	}
+	await Group.findOneAndUpdate({ _id: req.body.groupID }, { pollPlaces: pollPlacesList });
+	res.send("Added poll places to group " + req.body.groupID);
+})
 
 // API Routes
 app.post('/addUser', async function (req, res) {
@@ -63,7 +80,7 @@ app.post('/addUser', async function (req, res) {
 	});
 });
 app.post('/addGroup', async function (req, res) {
-	var group = new Group({ name: req.body.name, users: req.body.group, visitedPlaces: [], isPollOpen: false });
+	var group = new Group({ name: req.body.name, users: req.body.group, visitedPlaces: [], isPollOpen: false, pollPlaces: [] });
 	var error = false;
 	var invalidUsers = [];
 	// Check that all of the usernames given are registered users
