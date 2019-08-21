@@ -48,16 +48,6 @@ var PollPlace = mongoose.model('PollPlace', PollPlaceSchema)
 
 UserSchema.index({ _id: 1 }, { collation: { locale: 'en', strength: 2 } })
 
-
-app.post('/addPollPlaces', async function (req, res) {
-	var pollPlacesList = []
-	for (i = 0; i < req.body.places.length; i++) {
-		pollPlacesList.push(new PollPlace({ place: req.body.places[i], upvotes: 0, downvotes: 0}))
-	}
-	await Group.findOneAndUpdate({ _id: req.body.groupID }, { pollPlaces: pollPlacesList });
-	res.send("Added poll places to group " + req.body.groupID);
-})
-
 // API Routes
 app.post('/addUser', async function (req, res) {
 	var user = new User({ _id: req.body.username, name: req.body.name, email: req.body.email, visitedPlaces: [], groups: [[]] });
@@ -124,6 +114,7 @@ app.get('/getGroup', async function (req, res) {
 });
 app.post('/updatePoll', async function (req, res) {
 	await Group.findOneAndUpdate({ _id: req.body.groupID }, { isPollOpen: req.body.pollState });
+	if (!req.body.pollState) { await Group.findOneAndUpdate({ _id: req.body.groupID }, { pollPlaces: [] }); }
 	res.send("Poll state is now " + req.body.pollState);
 })
 app.get('/getUser', async function (req, res) {
@@ -221,6 +212,14 @@ app.delete('/removeUserFromGroup', async function(req, res) {
 			});
 		}
 	});
+});
+app.post('/addPollPlaces', async function (req, res) {
+	var pollPlacesList = []
+	for (i = 0; i < req.body.places.length; i++) {
+		pollPlacesList.push(new PollPlace({ place: req.body.places[i], upvotes: 0, downvotes: 0}))
+	}
+	await Group.findOneAndUpdate({ _id: req.body.groupID }, { pollPlaces: pollPlacesList });
+	res.send("Added poll places to group " + req.body.groupID);
 });
 
 mongoose.connection.once("open", function () {
