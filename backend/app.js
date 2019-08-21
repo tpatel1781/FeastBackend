@@ -49,7 +49,7 @@ var PollPlace = mongoose.model('PollPlace', PollPlaceSchema)
 UserSchema.index({ _id: 1 }, { collation: { locale: 'en', strength: 2 } })
 
 
-app.post('/addPollPlaces', function (req, res) {
+app.post('/addPollPlaces', async function (req, res) {
 	var pollPlacesList = []
 	for (i = 0; i < req.body.places.length; i++) {
 		pollPlacesList.push(new PollPlace({ place: req.body.places[i], upvotes: 0, downvotes: 0}))
