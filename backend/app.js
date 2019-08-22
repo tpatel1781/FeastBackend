@@ -23,8 +23,7 @@ var PlaceSchema = new Schema({
 });
 var PollPlaceSchema = new Schema({
 	place: mongoose.Mixed,
-	upvotes: Number,
-	downvotes: Number
+	votes: Number
 })
 var UserSchema = new Schema({
 	_id: String,
@@ -222,11 +221,18 @@ app.post('/updatePoll', async function (req, res) {
 app.post('/addPollPlaces', async function (req, res) {
 	var pollPlacesList = []
 	for (i = 0; i < req.body.places.length; i++) {
-		pollPlacesList.push(new PollPlace({ place: req.body.places[i], upvotes: 0, downvotes: 0}))
+		pollPlacesList.push(new PollPlace({ place: req.body.places[i], votes: 0}))
 	}
 	await Group.findOneAndUpdate({ _id: req.body.groupID }, { pollPlaces: pollPlacesList });
 	res.send("Added poll places to group " + req.body.groupID);
 });
+app.post('/votePollPlace', async function (req, res) {
+	var vote = (req.body.isUpvote) ? 1 : -1;
+	const string = "pollPlace." + req.body.index + ".votes"
+	await Group.findOneAndUpdate({ _id: req.body.groupID }, { $inc: { string: vote}});
+	res.send("Changed vote by " + vote);
+});
+
 
 mongoose.connection.once("open", function () {
 	// Start the server
