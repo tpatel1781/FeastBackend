@@ -229,7 +229,7 @@ app.post('/addPollPlaces', async function (req, res) {
 app.post('/votePollPlace', async function (req, res) {
 	var vote = (req.body.isUpvote) ? 1 : -1;
 	console.log("String: " + req.body.id)
-	await Group.findOneAndUpdate({ _id: req.body.groupID, 'pollPlaces._id' : req.body.id}, { $inc: { 'pollPlaces.$.votes': vote}}, {}, function (error, result) {
+	await Group.findOneAndUpdate({ _id: req.body.groupID, 'pollPlaces.place.id' : req.body.id}, { $set: { 'pollPlaces.$.votes': 1000}}, {}, function (error, result) {
 		if (error) {
 			console.log("Vote Poll Place Error: " + error);
 		} else {
