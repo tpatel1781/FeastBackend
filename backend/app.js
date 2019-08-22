@@ -229,6 +229,7 @@ app.post('/addPollPlaces', async function (req, res) {
 app.post('/votePollPlace', async function (req, res) {
 	var vote = (req.body.isUpvote) ? 1 : -1;
 	const string = "pollPlaces." + req.body.index + ".votes"
+	console.log("String: " + string)
 	await Group.findOneAndUpdate({ _id: req.body.groupID }, { $inc: { string: vote}});
 	res.send("Changed vote by " + vote);
 });
