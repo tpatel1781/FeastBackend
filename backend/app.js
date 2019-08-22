@@ -230,7 +230,7 @@ app.post('/votePollPlace', async function (req, res) {
 	var vote = (req.body.isUpvote) ? 1 : -1;
 	const string = "pollPlaces." + req.body.index + ".votes"
 	console.log("String: " + string)
-	await Group.findOneAndUpdate({ _id: req.body.groupID }, { $inc: { 'pollPlaces.0.votes': vote}}, {}, function (error, result) {
+	await Group.findOneAndUpdate({ _id: req.body.groupID, 'pollPlaces._id' : req.body.id}, { $inc: { 'pollPlaces.$.votes': vote}}, {}, function (error, result) {
 		if (error) {
 			console.log("Vote Poll Place Error: " + error);
 		} else {
