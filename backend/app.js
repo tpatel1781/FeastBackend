@@ -23,8 +23,9 @@ var PlaceSchema = new Schema({
 });
 var PollPlaceSchema = new Schema({
 	place: mongoose.Mixed,
-	votes: Number
-})
+	upvotes: [String],
+	downvotes: [String]
+});
 var UserSchema = new Schema({
 	_id: String,
 	name: String,
@@ -227,10 +228,22 @@ app.post('/addPollPlaces', async function (req, res) {
 	res.send("Added poll places to group " + req.body.groupID);
 });
 app.post('/votePollPlace', async function (req, res) {
-	var vote = (req.body.isUpvote) ? 1 : -1;
-	console.log("String: " + req.body.id)
-	await Group.findOneAndUpdate({ _id: req.body.groupID, 'pollPlaces.place.id' : req.body.id}, { $inc: { 'pollPlaces.$.votes': vote}});
-	res.send("Changed vote by " + vote);
+	// var vote = (req.body.isUpvote) ? 1 : -1;
+	// console.log("String: " + req.body.id)
+	// await Group.findOneAndUpdate({ _id: req.body.groupID, 'pollPlaces.place.id' : req.body.id}, { $inc: { 'pollPlaces.$.votes': vote}});
+	// res.send("Changed vote by " + vote);
+
+	if (req.body.isUpvote) {
+		// Check if downvote list contains this username, remove it and add the name to list of upvotes
+		await Group.findOneAndUpdate({ _id: req.body.groupID, 'pollPlaces.place.id' : req.body.id }, { $pull: { 'pollPlaces.$.downvotes': req.body.username }});
+		await Group.findOneAndUpdate({ _id: req.body.groupID, 'pollPlaces.place.id' : req.body.id }, { $addToSet: { 'pollPlaces.$.upvotes': req.body.username }});
+		res.send("Upvoted");
+	} else {
+		// Check if upvote list contains this username, remove it and add the name to list of downvotes
+		await Group.findOneAndUpdate({ _id: req.body.groupID, 'pollPlaces.place.id' : req.body.id }, { $pull: { 'pollPlaces.$.upvotes': req.body.username }});
+		await Group.findOneAndUpdate({ _id: req.body.groupID, 'pollPlaces.place.id' : req.body.id }, { $addToSet: { 'pollPlaces.$.downvotes': req.body.username }});
+		res.send("Downvoted");
+	}
 });
 
 
