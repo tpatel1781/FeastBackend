@@ -222,7 +222,7 @@ app.post('/updatePoll', async function (req, res) {
 app.post('/addPollPlaces', async function (req, res) {
 	var pollPlacesList = []
 	for (i = 0; i < req.body.places.length; i++) {
-		pollPlacesList.push(new PollPlace({ place: req.body.places[i], votes: 0}))
+		pollPlacesList.push(new PollPlace({ place: req.body.places[i], upvotes: [], downvotes: []}))
 	}
 	await Group.findOneAndUpdate({ _id: req.body.groupID }, { pollPlaces: pollPlacesList });
 	res.send("Added poll places to group " + req.body.groupID);
