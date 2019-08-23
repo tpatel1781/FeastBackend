@@ -232,7 +232,9 @@ app.post('/votePollPlace', async function (req, res) {
 	// console.log("String: " + req.body.id)
 	// await Group.findOneAndUpdate({ _id: req.body.groupID, 'pollPlaces.place.id' : req.body.id}, { $inc: { 'pollPlaces.$.votes': vote}});
 	// res.send("Changed vote by " + vote);
-
+	console.log(req.body.isUpvote)
+	console.log(req.body.username)
+	console.log(req.body.id)
 	if (req.body.isUpvote) {
 		// Check if downvote list contains this username, remove it and add the name to list of upvotes
 		await Group.findOneAndUpdate({ _id: req.body.groupID, 'pollPlaces.place.id' : req.body.id }, { $pull: { 'pollPlaces.$.downvotes': req.body.username }});
