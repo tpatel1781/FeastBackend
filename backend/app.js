@@ -235,12 +235,12 @@ app.post('/votePollPlace', async function (req, res) {
 
 	if (req.body.isUpvote) {
 		// Check if downvote list contains this username, remove it and add the name to list of upvotes
-		await Group.findOneAndUpdate({ _id: req.body.groupID, 'pollPlaces.place.id' : req.body.id }, { $pull: { 'pollPlaces.$.downvotes': req.body.username }}, false, true);
+		await Group.findOneAndUpdate({ _id: req.body.groupID, 'pollPlaces.place.id' : req.body.id }, { $pull: { 'pollPlaces.$.downvotes': req.body.username }});
 		await Group.findOneAndUpdate({ _id: req.body.groupID, 'pollPlaces.place.id' : req.body.id }, { $addToSet: { 'pollPlaces.$.upvotes': req.body.username }});
 		res.send("Upvoted");
 	} else {
 		// Check if upvote list contains this username, remove it and add the name to list of downvotes
-		await Group.findOneAndUpdate({ _id: req.body.groupID, 'pollPlaces.place.id' : req.body.id }, { $pull: { 'pollPlaces.$.upvotes': req.body.username }}, false, true);
+		await Group.findOneAndUpdate({ _id: req.body.groupID, 'pollPlaces.place.id' : req.body.id }, { $pull: { 'pollPlaces.$.upvotes': req.body.username }});
 		await Group.findOneAndUpdate({ _id: req.body.groupID, 'pollPlaces.place.id' : req.body.id }, { $addToSet: { 'pollPlaces.$.downvotes': req.body.username }});
 		res.send("Downvoted");
 	}
