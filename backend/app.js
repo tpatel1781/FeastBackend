@@ -221,6 +221,7 @@ app.post('/updatePoll', async function (req, res) {
 });
 app.post('/addPollPlaces', async function (req, res) {
 	var pollPlacesList = []
+	console.log("PLACES YA DIG: " + req.body.places);
 	for (i = 0; i < req.body.places.length; i++) {
 		pollPlacesList.push(new PollPlace({ place: req.body.places[i], upvotes: [], downvotes: []}))
 	}
